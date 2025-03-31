@@ -10,7 +10,7 @@ from tensorflow.keras.preprocessing import image
 app = Flask(__name__)  
 
 # Load Model
-model_path = 'D:/Traffic_Sign/model.h5'
+model_path = 'D:/Traffic_Sign/best_model.h5'
 
 model = load_model(model_path)
 
@@ -58,17 +58,24 @@ def getClassName(classNo):
 def model_predict(img_path, model):
     print(f"Processing image: {img_path}")
 
-    img = image.load_img(img_path, target_size=(32, 32))
+    img = image.load_img(img_path, target_size=(32, 32))  # Resize first
     img = np.asarray(img)
-    img = preprocessing(img)
+    
+    if len(img.shape) == 3:  # Convert RGB/4-channel images to grayscale
+        img = grayscale(img)
 
-    img = img.reshape(1, 32, 32, 1)
+    img = equalize(img)
+    img = img / 255.0  # Normalize
+
+    img = img.reshape(1, 32, 32, 1)  # Explicitly reshape for model input
 
     predictions = model.predict(img)
     classIndex = np.argmax(predictions)  
+    confidence = np.max(predictions) * 100  # Convert to percentage
 
-    result = getClassName(classIndex)
+    result = f"{getClassName(classIndex)} (Confidence: {confidence:.2f}%)"
     return result
+
 
 
 @app.route('/', methods=['GET'])
